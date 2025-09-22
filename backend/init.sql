@@ -6,14 +6,15 @@ USE perfil;
 
 -- Crear la tabla perfil
 CREATE TABLE perfil(
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    no_ser VARCHAR(250) NOT NULL,
-    modelo VARCHAR(100) NOT NULL,
-    rol ENUM('BOT','TOP') NOT NULL,
-    fr DATE NOT NULL,
-    empleado VARCHAR(250) NOT NULL,
-    counts INT NOT NULL DEFAULT 1
+id INT AUTO_INCREMENT PRIMARY KEY,
+no_ser Varchar(250) not null,
+modelo varchar(100) not null ,
+rol ENUM('BOT','TOP') NOT NULL,
+fr date not null,
+empleado varchar(250) not null,
+counts int not null
 );
+
 
 -- Crear índices para optimizar consultas
 CREATE INDEX idx_no_ser ON perfil(no_ser);
