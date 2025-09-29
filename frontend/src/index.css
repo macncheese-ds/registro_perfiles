@@ -584,6 +584,16 @@ body {
   color: white;
 }
 
+.badge-active {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  color: white;
+}
+
+.badge-inactive {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  color: white;
+}
+
 /* Alert Styles */
 .alert {
   padding: 15px 20px;

@@ -147,8 +147,6 @@ function App() {
           pagination={pagination}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
           loading={loading}
         />
       </div>

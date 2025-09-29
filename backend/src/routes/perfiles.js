@@ -293,34 +293,33 @@ router.get('/stats/general', async (req, res) => {
   try {
     const db = await createConnection();
     
-    // Total de perfiles (suma de todos los counts)
-    const [total] = await db.execute('SELECT SUM(counts) as count FROM perfil');
+    // Total de perfiles únicos (count distinct de combinaciones serie + modelo + rol)
+    const [totalPerfiles] = await db.execute('SELECT COUNT(*) as count FROM perfil');
     
-    // Perfiles por rol (suma de counts por rol)
-    const [roles] = await db.execute(
-      'SELECT rol, SUM(counts) as count FROM perfil GROUP BY rol'
-    );
-    
-    // Números de serie que han alcanzado el límite (suma de counts por no_ser >= 60)
-    const [limitReached] = await db.execute(`
-      SELECT no_ser, SUM(counts) as count 
+    // Perfiles activos (counts < 60)
+    const [perfilesActivos] = await db.execute(`
+      SELECT COUNT(*) as count 
       FROM perfil 
-      GROUP BY no_ser 
-      HAVING SUM(counts) >= 60
+      WHERE counts < 60
     `);
     
-    // Perfiles de hoy (suma de counts de hoy)
-    const [today] = await db.execute(
-      'SELECT SUM(counts) as count FROM perfil WHERE fr = CURDATE()'
-    );
+    // Perfiles inactivos (counts >= 60)
+    const [perfilesInactivos] = await db.execute(`
+      SELECT COUNT(*) as count 
+      FROM perfil 
+      WHERE counts >= 60
+    `);
+    
+    // Total de registros (suma de todos los counts)
+    const [totalRegistros] = await db.execute('SELECT SUM(counts) as count FROM perfil');
     
     await db.end();
     
     res.json({
-      total: total[0].count || 0,
-      roles: roles,
-      limitReached: limitReached.length,
-      today: today[0].count || 0
+      totalPerfiles: totalPerfiles[0].count || 0,
+      totalRegistros: totalRegistros[0].count || 0,
+      perfilesActivos: perfilesActivos[0].count || 0,
+      perfilesInactivos: perfilesInactivos[0].count || 0
     });
   } catch (error) {
     console.error('Error obteniendo estadísticas:', error);

@@ -6,26 +6,19 @@ const Stats = ({ stats }) => {
   return (
     <div className="stats-container">
       <div className="stat-card">
-        <div className="stat-number poppins-bold">{stats.total}</div>
+        <div className="stat-number poppins-bold">{stats.totalPerfiles}</div>
         <div className="stat-label poppins-regular">Total Perfiles</div>
       </div>
       
       <div className="stat-card">
-        <div className="stat-number poppins-bold">{stats.today}</div>
-        <div className="stat-label poppins-regular">Registros Hoy</div>
+        <div className="stat-number poppins-bold">{stats.perfilesActivos}</div>
+        <div className="stat-label poppins-regular">Perfiles Activos</div>
       </div>
       
       <div className="stat-card">
-        <div className="stat-number poppins-bold">{stats.limitReached}</div>
-        <div className="stat-label poppins-regular">Series con Límite</div>
+        <div className="stat-number poppins-bold">{stats.perfilesInactivos}</div>
+        <div className="stat-label poppins-regular">Perfiles Inactivos</div>
       </div>
-      
-      {stats.roles.map((rol) => (
-        <div key={rol.rol} className="stat-card">
-          <div className="stat-number poppins-bold">{rol.count}</div>
-          <div className="stat-label poppins-regular">Lado {rol.rol}</div>
-        </div>
-      ))}
     </div>
   );
 };
