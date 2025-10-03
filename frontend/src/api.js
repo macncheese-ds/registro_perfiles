@@ -1,8 +1,5 @@
-// Forzar uso de proxy nginx mientras debuggeamos
-const API_BASE_URL = '/api';
-
-console.log('Location:', window.location.hostname, window.location.port, typeof window.location.port);
-console.log('API_BASE_URL FORZADO:', API_BASE_URL);
+// Use relative API base (Vite dev proxy or production host)
+const API_BASE_URL = (window.__API_BASE__ && window.__API_BASE__) || '/api';
 
 export const api = {
   // Obtener todos los perfiles
@@ -79,8 +76,38 @@ export const api = {
 
   // Obtener modelos disponibles
   getModels: async () => {
-    const response = await fetch(`${API_BASE_URL}/perfiles/models`);
-    if (!response.ok) throw new Error('Error obteniendo modelos');
+    const endpoints = [
+      `${API_BASE_URL}/perfiles/models`,
+      `http://${window.location.hostname}:6001/api/perfiles/models`,
+      `http://${window.location.hostname}:6000/api/perfiles/models`
+    ];
+
+    for (const url of endpoints) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) return response.json();
+      } catch (err) {
+        // try next
+      }
+    }
+
+    // Final fallback: built-in list
+    return { models: [
+      'MGH100 RCU','MGH100 BL7','IDB PLOCK','IDB MAIN','IDB IPTS','POWER PACK','MGH MOCI','MGH100 ESC','FCM 30W','MRR35','IAMM','IAMM2','IAMMD','FRHC'
+    ] };
+  },
+
+  // Lookup employee (scan/manual) to know if user exists and normalized value
+  lookupEmployee: async (employee_input) => {
+    const response = await fetch(`${API_BASE_URL}/perfiles/lookup/${encodeURIComponent(employee_input)}`);
+    if (!response.ok) throw new Error('Error en lookup');
+    return response.json();
+  },
+
+  // Obtener todos los registros por numero de serie
+  getRecords: async (no_ser) => {
+    const response = await fetch(`${API_BASE_URL}/perfiles/records/${encodeURIComponent(no_ser)}`);
+    if (!response.ok) throw new Error('Error obteniendo registros');
     return response.json();
   },
 };

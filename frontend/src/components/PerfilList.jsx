@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import RecordsModal from './RecordsModal';
 
 const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }) => {
   const formatDate = (dateString) => {
@@ -20,9 +21,12 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
     );
   }
 
-  // Separar perfiles en activos e inactivos
-  const perfilesActivos = perfiles.filter(perfil => perfil.counts < 60);
-  const perfilesInactivos = perfiles.filter(perfil => perfil.counts >= 60);
+  // El backend ahora devuelve un perfil por número de serie con `count` y los datos del último registro
+  const perfilesActivos = perfiles.filter(perfil => (perfil.count ?? 0) < 60);
+  const perfilesInactivos = perfiles.filter(perfil => (perfil.count ?? 0) >= 60);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedSerie, setSelectedSerie] = useState(null);
 
   const renderPerfilCard = (perfil, showBanner = false) => (
     <div key={perfil.id} style={{
@@ -58,16 +62,14 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
           <div className="poppins-semibold" style={{ fontSize: '1.1rem', color: '#2d3748' }}>
             {perfil.no_ser}
           </div>
-          <div className="poppins-regular" style={{ fontSize: '0.9rem', color: '#718096' }}>
-            ID: {perfil.id}
-          </div>
+          {/* ID oculto por petición del usuario */}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
           <span className={`badge ${perfil.rol === 'TOP' ? 'badge-top' : 'badge-bot'} poppins-medium`}>
             {perfil.rol}
           </span>
-          <span className={`badge ${perfil.counts >= 60 ? 'badge-inactive' : 'badge-active'} poppins-medium`}>
-            {perfil.counts >= 60 ? 'Inactivo' : 'Activo'}
+          <span className={`badge ${perfil.count >= 60 ? 'badge-inactive' : 'badge-active'} poppins-medium`}>
+            {perfil.count >= 60 ? 'Inactivo' : 'Activo'}
           </span>
         </div>
       </div>
@@ -79,8 +81,18 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
         <div className="poppins-regular" style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '4px' }}>
           {perfil.empleado} • {formatDate(perfil.fr)}
         </div>
-        <div className="poppins-medium" style={{ fontSize: '0.9rem', color: '#4299e1' }}>
-          Registros: {perfil.counts}/60
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="poppins-medium" style={{ fontSize: '0.9rem', color: '#4299e1' }}>
+            Registros: {perfil.count ?? 0}/60
+          </div>
+          <button
+            title="Ver historial"
+            onClick={() => { setSelectedSerie(perfil.no_ser); setModalOpen(true); }}
+            className="btn btn-ghost"
+            style={{ padding: '6px 8px', borderRadius: '8px' }}
+          >
+            ℹ️
+          </button>
         </div>
       </div>
     </div>
@@ -88,8 +100,8 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
 
   const renderPerfilRow = (perfil, showBanner = false) => (
     <React.Fragment key={perfil.id}>
-      {showBanner && perfil.counts >= 60 && (
-        <tr>
+      {showBanner && (perfil.count ?? 0) >= 60 && (
+  <tr>
           <td colSpan="8" style={{ padding: '12px', backgroundColor: '#fed7d7', border: '1px solid #feb2b2' }}>
             <div style={{ textAlign: 'center' }}>
               <span className="poppins-semibold" style={{ color: '#c53030', fontSize: '0.9rem' }}>
@@ -100,7 +112,7 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
         </tr>
       )}
       <tr>
-        <td className="poppins-regular">{perfil.id}</td>
+        {/* ID eliminado por petición del usuario */}
         <td className="poppins-medium">{perfil.no_ser}</td>
         <td className="poppins-regular">{perfil.modelo}</td>
         <td>
@@ -108,14 +120,22 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
             {perfil.rol}
           </span>
         </td>
-        <td className="poppins-medium">{perfil.counts}</td>
+        <td className="poppins-medium">{perfil.count ?? 0}</td>
         <td>
-          <span className={`badge ${perfil.counts >= 60 ? 'badge-inactive' : 'badge-active'} poppins-medium`}>
-            {perfil.counts >= 60 ? 'Inactivo' : 'Activo'}
+          <span className={`badge ${(perfil.count ?? 0) >= 60 ? 'badge-inactive' : 'badge-active'} poppins-medium`}>
+            {(perfil.count ?? 0) >= 60 ? 'Inactivo' : 'Activo'}
           </span>
         </td>
         <td className="poppins-regular">{formatDate(perfil.fr)}</td>
         <td className="poppins-regular">{perfil.empleado}</td>
+        <td>
+          <button
+            title="Ver historial"
+            onClick={() => { setSelectedSerie(perfil.no_ser); setModalOpen(true); }}
+            className="btn btn-ghost"
+            style={{ padding: '6px 8px', borderRadius: '8px' }}
+          >Historial</button>
+        </td>
       </tr>
     </React.Fragment>
   );
@@ -151,7 +171,6 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
                 <table className="table">
                   <thead>
                     <tr>
-                      <th className="poppins-semibold">ID</th>
                       <th className="poppins-semibold">No. Serie</th>
                       <th className="poppins-semibold">Modelo</th>
                       <th className="poppins-semibold">Lado</th>
@@ -159,6 +178,7 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
                       <th className="poppins-semibold">Estado</th>
                       <th className="poppins-semibold">Fecha Registro</th>
                       <th className="poppins-semibold">Empleado</th>
+                      <th className="poppins-semibold">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -188,7 +208,6 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
                 <table className="table">
                   <thead>
                     <tr>
-                      <th className="poppins-semibold">ID</th>
                       <th className="poppins-semibold">No. Serie</th>
                       <th className="poppins-semibold">Modelo</th>
                       <th className="poppins-semibold">Lado</th>
@@ -210,6 +229,10 @@ const PerfilList = ({ perfiles, pagination, currentPage, onPageChange, loading }
               </div>
             </>
           )}
+
+      {modalOpen && (
+        <RecordsModal no_ser={selectedSerie} onClose={() => setModalOpen(false)} />
+      )}
 
           {/* Paginación */}
           {pagination && pagination.pages > 1 && (

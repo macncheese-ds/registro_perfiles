@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
+import AuthModal from './AuthModal';
 
 const PerfilForm = ({ onSubmit, initialData, onCancel }) => {
   const [formData, setFormData] = useState({
     no_ser: '',
     modelo: '',
-    rol: 'TOP',
-    empleado: ''
+    rol: 'TOP'
   });
   const [combinationCount, setCombinationCount] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [authError, setAuthError] = useState(null);
+  const [authModalResetKey, setAuthModalResetKey] = useState(0);
   const [models, setModels] = useState([
     'MGH100 RCU',
     'MGH100 BL7',
@@ -21,7 +24,9 @@ const PerfilForm = ({ onSubmit, initialData, onCancel }) => {
     'MGH100 ESC',
     'FCM 30W',
     'MRR35',
+    'IAMM',
     'IAMM2',
+    'IAMMD',
     'FRHC'
   ]);
 
@@ -68,6 +73,7 @@ const PerfilForm = ({ onSubmit, initialData, onCancel }) => {
     if (!initialData && newFormData.no_ser && newFormData.modelo && newFormData.rol) {
       try {
         const countData = await api.getCombinationCount(newFormData.no_ser, newFormData.modelo, newFormData.rol);
+        // El backend ahora devuelve { count, canRegister, last }
         setCombinationCount(countData);
       } catch (error) {
         setCombinationCount(null);
@@ -77,24 +83,38 @@ const PerfilForm = ({ onSubmit, initialData, onCancel }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  // Open auth modal instead of submitting inline employee/password
+  const handleSubmit = (e) => {
     e.preventDefault();
+    // Validate basic form fields first
+    if (!formData.no_ser || !formData.modelo || !formData.rol) return;
+    setAuthModalVisible(true);
+  };
+
+  const handleAuthConfirm = async ({ employee_input, password }) => {
+    // Do NOT close modal until we know the result. Keep it open on error and reset inputs.
+    setAuthError(null);
     setLoading(true);
-    
     try {
-      await onSubmit(formData);
+      const payload = { ...formData, employee_input, password };
+      await onSubmit(payload);
+
+      // success -> close modal and reset form and modal state
+      setAuthModalVisible(false);
+      setAuthModalResetKey(k => k + 1);
+      setAuthError(null);
+
       if (!initialData) {
-        // Solo resetear si estamos creando (no editando)
-        setFormData({
-          no_ser: '',
-          modelo: '',
-          rol: 'TOP',
-          empleado: ''
-        });
+        setFormData({ no_ser: '', modelo: '', rol: 'TOP' });
         setCombinationCount(null);
       }
     } catch (error) {
-      // El error se maneja en el componente padre
+      // Show error in modal and reset modal inputs so credentials are not retained
+      const message = error && error.message ? error.message : 'Error autenticando';
+      setAuthError(message);
+      // remount modal to clear internal fields
+      setAuthModalResetKey(k => k + 1);
+      setAuthModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -124,6 +144,11 @@ const PerfilForm = ({ onSubmit, initialData, onCancel }) => {
             {!canRegister && (
               <div className="limit-warning">
                 <strong>Límite alcanzado</strong> - Máximo 60 registros por número de serie
+              </div>
+            )}
+            {combinationCount.last && (
+              <div style={{ marginTop: '8px', color: '#4a5568' }}>
+                Último registro: <strong>{combinationCount.last.empleado}</strong> • {combinationCount.last.fr}
               </div>
             )}
           </div>
@@ -183,20 +208,7 @@ const PerfilForm = ({ onSubmit, initialData, onCancel }) => {
             </select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label poppins-medium">
-              Empleado *
-            </label>
-            <input
-              type="text"
-              name="empleado"
-              value={formData.empleado}
-              onChange={handleInputChange}
-              className="form-input poppins-regular"
-              placeholder="Ej: Juan Pérez"
-              required
-            />
-          </div>
+          {/* employee and password are collected in the auth modal on submit */}
         </div>
 
         <div className="form-actions">
@@ -209,15 +221,22 @@ const PerfilForm = ({ onSubmit, initialData, onCancel }) => {
               Cancelar
             </button>
           )}
-          <button
-            type="submit"
-            disabled={loading || (!initialData && !canRegister)}
-            className="btn btn-primary poppins-medium"
-          >
-            {loading ? 'Procesando...' : (initialData ? 'Actualizar' : 'Registrar')}
-          </button>
+              <button
+                type="submit"
+                disabled={loading || (!initialData && !canRegister)}
+                className="btn btn-primary poppins-medium"
+              >
+                {loading ? 'Procesando...' : (initialData ? 'Actualizar' : 'Registrar')}
+              </button>
         </div>
       </form>
+      <AuthModal
+        key={authModalResetKey}
+        visible={authModalVisible}
+        onClose={() => { setAuthModalVisible(false); setAuthError(null); }}
+        onConfirm={handleAuthConfirm}
+        error={authError}
+      />
     </div>
   );
 };

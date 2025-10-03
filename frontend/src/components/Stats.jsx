@@ -9,7 +9,11 @@ const Stats = ({ stats }) => {
         <div className="stat-number poppins-bold">{stats.totalPerfiles}</div>
         <div className="stat-label poppins-regular">Total Perfiles</div>
       </div>
-      
+      <div className="stat-card">
+        <div className="stat-number poppins-bold">{stats.totalRegistros}</div>
+        <div className="stat-label poppins-regular">Total Registros</div>
+      </div>
+
       <div className="stat-card">
         <div className="stat-number poppins-bold">{stats.perfilesActivos}</div>
         <div className="stat-label poppins-regular">Perfiles Activos</div>
